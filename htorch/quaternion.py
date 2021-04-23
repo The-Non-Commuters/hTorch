@@ -56,6 +56,9 @@ def set_grad(self, grad):
 def dim(self):
     return self.q.dim()
 
+@implements(torch.Tensor.size)
+def size(self, *args):
+    return self.q.size(*args)
 
 @implements(torch.Tensor.t)
 def t(self):
