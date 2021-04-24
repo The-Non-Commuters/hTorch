@@ -236,4 +236,24 @@ class QModReLU(torch.nn.Module):
 
     def forward(self, x):
         norm = x.norm()
-        return F.relu(norm + self.bias) * (x / norm) 
+        return F.relu(norm + self.bias) * (x / norm)
+
+class QDropout(torch.nn.Dropout2d):
+    """
+    Quaternion Dropout
+    """
+    def forward(self, x):
+        x = torch.stack(torch.chunk(x, 4, 1), 2)
+        x = super().forward(x)
+        x = x.transpose(2, 1).flatten(start_dim=1, end_dim=2)
+        return x
+
+class QDropout2d(torch.nn.Dropout3d):
+    """
+    Quaternion Dropout2d
+    """
+    def forward(self, x):
+        x = torch.stack(torch.chunk(x, 4, 1), 2)
+        x = super().forward(x)
+        x = x.transpose(2, 1).flatten(start_dim=1, end_dim=2)
+        return x
