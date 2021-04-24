@@ -408,27 +408,29 @@ class QConvTranspose3d(nn.Module):
         return Q(F.conv_transpose3d(x, self.weight, self.bias, self.stride,
                                   self.padding, self.output_padding, self.groups, self.dilation))
 
+
 # reference https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8632910
 class QMaxPool2d(nn.Module):
     """
     Quaternion max pooling 2d
     """
 
-    def __init__(self, kernel_size, stride, padding=0):
+    def __init__(self, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False):
         """
         @type kernel_size: int/tuple/list
         @type stride: int/tuple/list
         @type padding: int
         """
         super(QMaxPool2d, self).__init__()
-        self.pool = nn.MaxPool2d(kernel_size, stride, padding, return_indices=True)
+        self.pool = nn.MaxPool2d(kernel_size, stride, padding, dilation, return_indices=True, ceil_mode=ceil_mode)
 
     def forward(self, x):
-        c, idx = self.pool(x.norm())
-        idx = torch.cat([idx]*4, 1)
+        chunked = torch.stack(torch.chunk(x, 4, 1), 2)
+        norm = torch.linalg.norm(chunked, dim=2)
+        _, idx = self.pool(norm)
+        idx = idx.repeat(1, 4, 1, 1)
         flat = x.flatten(start_dim=2)
         output = flat.gather(dim=2, index=idx.flatten(start_dim=2)).view_as(idx)
-
         return output
 
     
